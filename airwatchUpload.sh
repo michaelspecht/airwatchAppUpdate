@@ -77,19 +77,18 @@ echo -n ",\"ChunkSize\": " >> ${uploadJson}
 cat ${base64Binary} | wc -c >> ${uploadJson}
 echo -n "}" >> ${uploadJson}
 
-function uploadIPAData {
-    # Make the POST Request to upload the binary to AirWatch. This will only put the artifact in airwatch, and not make it visible to any users
-    curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/uploadchunk" -d @${uploadJson} --header "Content-Type: application/json" > ${uploadResult}
-}
-
-uploadIPAData
+# Make the POST Request to upload the binary to AirWatch. This will only put the artifact in airwatch, and not make it visible to any users
+curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/uploadchunk" -d @${uploadJson} --header "Content-Type: application/json" > ${uploadResult}
 
 # Verify the upload succeeded
 grep -q "\"UploadSuccess\":true" ${uploadResult} &> /dev/null
 if [ $? != 0 ]; then
     >&2 echo "Retrying upload..."
     sleep 5
-    uploadIPAData
+
+    # Make the POST Request to upload the binary to AirWatch. This will only put the artifact in airwatch, and not make it visible to any users
+    curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/uploadchunk" -d @${uploadJson} --header "Content-Type: application/json" > ${uploadResult}
+
     grep -q "\"UploadSuccess\":true" ${uploadResult} &> /dev/null
     if [ $? != 0 ]; then
         >&2 echo "Error uploading app binary"
@@ -129,17 +128,15 @@ cat ${beginInstallJson}
 # ------------------------------------------------------------------
 # Form the Install request's JSON
 # ------------------------------------------------------------------
-function performInstallRequest {
-    curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/begininstall" -d @${beginInstallJson}  --header "Content-Type: application/json" > ${installResult}
-}
-
-performInstallRequest
+curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/begininstall" -d @${beginInstallJson}  --header "Content-Type: application/json" > ${installResult}
 
 # Verify the upload succeeded
 grep -q "ApplicationName" ${installResult} &> /dev/null
 if [ $? != 0 ]; then
     sleep 5
-    performInstallRequest
+
+    curl -vX POST -H "Authorization: Basic $1" -H "aw-tenant-code: $2" "${airwatchUrl}/api/mam/apps/internal/begininstall" -d @${beginInstallJson}  --header "Content-Type: application/json" > ${installResult}
+
     grep -q "ApplicationName" ${installResult} &> /dev/null
     if [ $? != 0 ]; then
         >&2 echo "Error creating install for app binary"
